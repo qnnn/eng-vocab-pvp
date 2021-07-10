@@ -1,0 +1,21 @@
+server:
+  port: 8099
+
+
+security:
+  oauth2:
+    resource:
+      token-info-uri: http://localhost:8090/oauth/check_token
+    client:
+      user-authorization-uri: http://localhost:8090/oauth/authorize
+      access-token-uri: http://localhost:8090/oauth/token
+      client-id: client
+      client-secret: secret
+
+spring:
+  application:
+    name: websocket-server
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.229.150:8848
