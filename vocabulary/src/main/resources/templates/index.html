@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <title>词汇量测试</title>
+    <script src="https://unpkg.com/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui@2.13.2/lib/index.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/element-ui@2.13.2/lib/theme-chalk/index.css"/>
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        .box {
+            display: flex;
+            width: 100%;
+            top: 0;
+            margin-top: -1%;
+            /*height: ;*/
+        }
+
+        .left {
+
+            width: 300px;
+            left: 0;
+        }
+
+        .right {
+            width: 300px;
+        }
+
+        .center {
+            flex: 1;
+            background-color: lightgreen;
+        }
+    </style>
+</head>
+<body style="background-color: lightgray;">
+<div id="app">
+
+    <div class="box">
+        <div class="left"></div>
+        <div class="center">
+            <div style="width: 90%;margin-left: 5%;">
+                <img src="img/book.png" style="position: absolute;left: 50%;width: 8%;margin-top: 3%;">
+                <div style="font-size: 100px;left: 0;position: relative;line-height: 10px;height: 300px;">
+                    <strong style="margin-left: 1%;">
+                        <p>Test</p>
+                    </strong>
+
+                    <strong>Your</strong><strong style="margin-left: 5%;">Vocab</strong>
+                </div>
+                <div style="font-size: large;">
+                    <p>
+                        Check the box for each word you know at least one definition for.
+
+                        <br><br>
+                        (Don't check boxes for words you know you've seen before, but whose meaning you aren't exactly
+                        sure of.)
+                        <br><br>
+                        Tip: on Windows computers, you can navigate and select checkboxes with your keyboard using tab
+                        and space.
+                    </p>
+                </div>
+                <img width="105px" src="img/s1.png">
+                <img width="105px" src="img/s2.png">
+                <img width="105px" src="img/s3.png">
+                <img width="105px" src="img/s4.png">
+                <img width="105px" src="img/s5.png">
+                <img width="105px" src="img/s6.png">
+                <img width="105px" src="img/s7.png">
+                <el-tabs type="border-card" @tab-click="handleClick" style="width: 95%;margin-top: 3%;">
+                    <el-tab-pane label="四级词汇测试">
+                        <template>
+                            <el-checkbox v-if="clickTime!=0" :indeterminate="isIndeterminate" v-model="checkAll"
+                                         @change="handleCheckAllChange">全选
+                            </el-checkbox>
+                            <div style="margin: 15px 0;"></div>
+                            <el-checkbox-group v-if="clickTime!=0" v-model="checkedVacs"
+                                               @change="handlecheckedVacsChange">
+                                <el-checkbox v-for="tolvac in tolvacs" :label="tolvac" :key="tolvac" size="100px"
+                                             style="width: 100px;margin-left: 5px;">{{tolvac}}
+                                </el-checkbox>
+                            </el-checkbox-group>
+                        </template>
+                    </el-tab-pane>
+                    <el-tab-pane label="六级词汇测试">
+                        <template>
+                            <el-checkbox v-if="clickTime!=0" :indeterminate="isIndeterminate" v-model="checkAll"
+                                         @change="handleCheckAllChange">全选
+                            </el-checkbox>
+                            <div style="margin: 15px 0;"></div>
+                            <el-checkbox-group v-if="clickTime!=0" v-model="checkedVacs"
+                                               @change="handlecheckedVacsChange">
+                                <el-checkbox v-for="tolvac in tolvacs" :label="tolvac" :key="tolvac" size="100px"
+                                             style="width: 100px;margin-left: 5px;">{{tolvac}}
+                                </el-checkbox>
+                            </el-checkbox-group>
+                        </template>
+                    </el-tab-pane>
+                    <el-tab-pane label="考研词汇测试">
+                        <template>
+                            <el-checkbox v-if="clickTime!=0" :indeterminate="isIndeterminate" v-model="checkAll"
+                                         @change="handleCheckAllChange">全选
+                            </el-checkbox>
+                            <div style="margin: 15px 0;"></div>
+                            <el-checkbox-group v-if="clickTime!=0" v-model="checkedVacs"
+                                               @change="handlecheckedVacsChange">
+                                <el-checkbox v-for="tolvac in tolvacs" :label="tolvac" :key="tolvac" size="100px"
+                                             style="width: 100px;margin-left: 5px;">{{tolvac}}
+                                </el-checkbox>
+                            </el-checkbox-group>
+                        </template>
+                    </el-tab-pane>
+                    <el-tab-pane label="历史词汇查询">
+                        <template>
+                            <el-table :data="tableData" height="" border style="width: 100%">
+                                <el-table-column prop="date" label="日期" width="180">
+                                </el-table-column>
+                                <el-table-column prop="sno" label="学号" width="160">
+                                </el-table-column>
+                                <el-table-column prop="sname" label="姓名" width="120">
+                                </el-table-column>
+                                <el-table-column prop="type" label="类别" width="120">
+                                </el-table-column>
+                                <el-table-column prop="score" label="词汇量">
+                                </el-table-column>
+                            </el-table>
+                        </template>
+                    </el-tab-pane>
+                    <template v-if="clickTime==0 && type != -1">
+                        <h1>Congradulation!</h1>
+                        <h2>Your vacabulary size is estimated to be <span>{{result}}</span>!</h2>
+                    </template>
+                </el-tabs>
+
+                <el-button v-if="clickTime > 0 && type != -1" type="primary" style="margin-top: 3%;margin-left: 77%;"
+                           @click="Submit">{{kTc}}
+                </el-button>
+
+            </div>
+            <div style="margin-top: 5%;background-color: #333333;color: beige;width: 100%;height: 7%;">
+                <div style="width: 70%;margin-left: 15%;">
+                </div>
+            </div>
+        </div>
+        <div class="right"></div>
+    </div>
+
+</div>
+<script type="text/javascript">
+    var cookie = getCookie('CSRF-TOKEN')
+    function getCookie(name)
+    {
+        var arr,reg=new RegExp("(^| )"+name+"=([^;]*)(;|$)");
+
+        if(arr=document.cookie.match(reg))
+
+            return unescape(arr[2]);
+        else
+            return null;
+    }
+    var Main = {
+
+        data() {
+            return {
+                checkAll: false,
+                checkedVacs: [],
+                tolvacs: [], //取单词
+                isIndeterminate: true,
+                kTc: 'Click to continue.',
+                clickTime: 1,
+                type: 1,
+                grade: 3,
+                result: 0,
+                value: '',
+                tableData: [],
+                access_token: ""
+            };
+        },
+        mounted() {
+            this.getWord();
+        },
+        methods: {
+            getWord() {
+                axios.get('/single/words', {
+                    params: {
+                        type: this.type
+                    }
+                }).then(response => {
+                    console.log(response.data);
+                    this.tolvacs = response.data.data.words;
+                    this.grade = response.data.data.grade;
+                }, response => {
+                    console.log("error111");
+                });
+
+                axios.get('/single/token').then(response => {
+                    console.log(response);
+                    this.access_token = response.data.data;
+                    console.log(this.access_token)
+                }, response => {
+                    console.log("error222");
+                });
+            },
+            postWord(type) {
+                var commitDTO = {
+                    type: type,
+                    page: this.clickTime,
+                    grade: this.grade,
+                    words: this.checkedVacs,
+                    _csrf: cookie
+                }
+                const formData = new FormData();
+                Object.keys(commitDTO).forEach((key)=>{
+                    formData.append(key,commitDTO[key])
+                })
+
+                console.log(formData)
+
+                axios.post('/single/words', formData, {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    withCredentials: true
+                }).then(response => {
+                    this.tolvacs = response.data.data.words;
+                    this.grade = response.data.data.grade;
+                    console.log("3333");
+                }, response => {
+                    console.log("error333");
+                });
+
+            },
+            postResult(type) {
+                var commitDTO = {
+                    type: type,
+                    page: this.clickTime,
+                    grade: this.grade,
+                    words: this.checkedVacs,
+                    _csrf: cookie
+                }
+                const formData = new FormData();
+                Object.keys(commitDTO).forEach((key)=>{
+                    formData.append(key,commitDTO[key])
+                })
+
+                axios.post('/single/score', formData, {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    withCredentials: true
+                }).then(response => {
+                    console.log(response.data);
+                    this.result = response.data.data;
+                }, response => {
+                    console.log("error444");
+                });
+            },
+            getHistory() {
+                axios.get('/single/history').then(response => {
+                    console.log(response.data);
+                    this.tableData = response.data.data;
+                }, response => {
+                    console.log("error555");
+                });
+            },
+            handleCheckAllChange(val) {
+                this.checkedVacs = val ? this.tolvacs : [];
+                this.isIndeterminate = false;
+            },
+            handlecheckedVacsChange(value) {
+                let checkedCount = value.length;
+                this.checkAll = checkedCount === this.tolvacs.length; //单词数
+                this.isIndeterminate = checkedCount > 0 && checkedCount < this.tolvacs.length;
+            },
+            chushihua() {
+                this.clickTime = 1;
+                this.kTc = 'Click to continue.';
+                this.checkedVacs = [];
+                this.checkAll = false;
+                this.isIndeterminate = true;
+                this.grade = 3;
+            },
+            handleClick(tab, event) {
+                this.tolvacs = [];
+                switch (tab.paneName) {
+                    case '0':
+                        this.type = 1;
+                        this.getWord();
+                        break;
+                    case '1':
+                        this.type = 2;
+                        this.getWord();
+                        break;
+                    case '2':
+                        this.type = 3;
+                        this.getWord();
+                        break;
+                    case '3':
+                        this.type = -1;
+                        this.getHistory();
+                }
+                this.chushihua();
+            },
+            Submit() {
+                switch (this.clickTime) {
+                    case 0:
+                        this.tolvacs = [];
+                        break;
+                    case 1:
+                        this.kTc = "Click to continue."
+                        this.postWord(this.type);
+                        this.checkedVacs = [];
+                        break;
+                    case 2:
+                        this.kTc = "Finish."
+                        this.postWord(this.type);
+                        this.checkedVacs = [];
+                        break;
+                    case 3:
+                        this.postResult(this.type);
+                        this.checkedVacs = [];
+                        break;
+                }
+                this.checkAll = false;
+                this.isIndeterminate = true;
+                this.clickTime = (this.clickTime + 1) % 4;
+                console.log(this.checkedVacs);
+            },
+        }
+    };
+    var Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+</body>
+</html>
