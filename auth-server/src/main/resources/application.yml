@@ -30,3 +30,10 @@ spring:
         max-idle: 8
         max-wait: -1ms
 
+  application:
+    name: auth-server
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.229.150:8848
+
