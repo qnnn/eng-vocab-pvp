@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+    <script th:src="@{/js/myAlert.js}"></script>
+    <style>
+        .cp-form {
+            width: 100%;
+            max-width: 330px;
+            padding: 15px;
+            margin: auto;
+        }
+
+        .time {
+            display: flex;
+            align-items: center;
+        }
+
+        .time div h2 span {
+            width: 50px;
+            height: 50px;
+            background: -webkit-gradient(linear, left top, right top, from(#00aeff), to(#00ffea));
+            background: linear-gradient(to right bottom, #00ffd9, #00d9ff);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-left: 10px;
+            color: #fff;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="text-center">
+<main class="cp-form">
+    <div class="time" style="margin-left: 40%;padding-top: 30%" >
+        <div><h2><span class="clock">5</span></h2></div>
+    </div>
+    <div class="card">
+        <h5 class="card-header" id="word">选择正确的翻译</h5>
+        <div class="card-body">
+            <form onsubmit="return false">
+                <div class="mb-3">
+                    <input type="radio" class="btn-check" onclick="res(document.getElementById('resA').innerText)"
+                           name="options-outlined" id="success-outlined" disabled
+                           autocomplete="off">
+                    <label class="btn btn-outline-secondary" id="resA" for="success-outlined">选项A</label>
+                </div>
+
+                <div class="mb-3">
+                    <input type="radio" class="btn-check" onclick="res(document.getElementById('resB').innerText)"
+                           name="options-outlined" id="danger-outlined1" disabled
+                           autocomplete="off">
+                    <label class="btn btn-outline-secondary" id="resB" for="danger-outlined1">选项B</label>
+                </div>
+
+                <div class="mb-3">
+                    <input type="radio" class="btn-check" onclick="res(document.getElementById('resC').innerText)"
+                           name="options-outlined" id="danger-outlined2" disabled
+                           autocomplete="off">
+                    <label class="btn btn-outline-secondary" id="resC" for="danger-outlined2">选项C</label>
+                </div>
+                <div class="mb-3">
+                    <input type="radio" class="btn-check" onclick="res(document.getElementById('resD').innerText)"
+                           name="options-outlined" id="danger-outlined3" disabled
+                           autocomplete="off">
+                    <label class="btn btn-outline-secondary" id="resD" for="danger-outlined3">选项D</label>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+
+</body>
+<script>
+
+    var socket;
+
+    if (window.WebSocket) {
+        var s = "";
+        $.ajax({
+            type: "get",
+            url: "/competitor/getCurrentSno",
+            data: {},
+            async: false,
+            success: function (data) {
+                s = data
+            }
+        })
+
+        console.log(s)
+
+        socket = new WebSocket("ws://127.0.0.1:8099/handler/" + s)
+
+
+
+        var subject;
+
+        socket.onmessage = function (ev) {
+            const data = String(ev.data);
+            // 胜负判断
+            if (data.startsWith("win") || data.startsWith("lose")|| data.startsWith("tie")) {
+                if (data.startsWith("win")){
+                    commonUtil.message("victory!","info");
+                }
+                else if (data.startsWith("lose")){
+                    commonUtil.message("defeated!","danger")
+                }
+                else {
+                    commonUtil.message("tie!","light")
+                }
+                socket.close()
+            }
+
+            // 对局开始,开始获取题目
+            else if (data.startsWith("begin")||data.startsWith("op.begin")) {
+                commonUtil.message("对局开始", "info")
+                if (data.startsWith("begin")){
+                    send("getSubject:0")
+                }
+            }
+
+            // 后续题目
+            else if (data.startsWith("subject:")||data.startsWith("op.subject:")) {
+                var subject = "";
+                if (data.startsWith("subject:")){
+                    subject = data.slice(9, data.length).split("AA");
+                }else {
+                    subject = data.slice(12, data.length).split("AA");
+                }
+                document.getElementById("word").innerText = subject[0];
+                document.getElementById("resA").innerText = subject[1];
+                document.getElementById("resB").innerText = subject[2];
+                document.getElementById("resC").innerText = subject[3];
+                document.getElementById("resD").innerText = subject[4];
+                // 开启选项
+                changeHtml(false)
+                init()
+                // 倒计时
+                t = 5
+                inter = setInterval("fun()", 1000)
+                // 玩家1查找下一道题
+                if (data.startsWith("subject:")){
+                    var index = parseInt(data.substring(8, 9)) + 1;
+
+                    var msg = "getSubject:" + index
+                    setTimeout(function () {
+                        send(msg)
+                    }, 5000);
+                }
+            }
+
+            // 每道题目判断结果
+            else if (data.startsWith("correct")||data.startsWith("wrong")) {
+                if (data.startsWith("correct")){
+                    commonUtil.message("答案正确","info")
+                }else {
+                    commonUtil.message("答案错误","danger")
+                }
+            }
+
+            // 对手消息
+            else if (data.startsWith("opponent:")) {
+                var info = data.slice(9, data.length);
+                // 对方中断
+                if (info.startsWith("exit")) {
+                    commonUtil.message("对手退出，获胜！", "info")
+                    socket.close()
+                }
+            }
+        }
+
+        socket.onopen = function (ev) {
+            console.log("开启")
+        }
+
+        socket.onclose = function (ev) {
+            console.log("关闭")
+        }
+
+    } else {
+        alert("当前浏览器不支持websocket")
+    }
+
+    // 发送消息到服务器
+    function send(message) {
+        if (!window.socket) {// 先判断socket是否创建好
+            return;
+        }
+        if (socket.readyState === WebSocket.OPEN) {
+            console.log(message)
+            socket.send(message)
+        } else {
+            alert("连接没有开启")
+        }
+    }
+
+    function changeHtml(flag) {
+        $("#success-outlined").attr("disabled", flag)
+        $("#danger-outlined1").attr("disabled", flag)
+        $("#danger-outlined2").attr("disabled", flag)
+        $("#danger-outlined3").attr("disabled", flag)
+    }
+
+    function init() {
+        $("#success-outlined").prop("checked",false)
+        $("#danger-outlined1").prop("checked",false)
+        $("#danger-outlined2").prop("checked",false)
+        $("#danger-outlined3").prop("checked",false)
+    }
+
+
+    function res(text) {
+        var msg = "res:";
+        send(msg+text)
+        changeHtml(true)
+    }
+
+
+    var t = 5;
+    var time = document.getElementsByClassName("clock")[0];
+
+    function fun() {
+        t--;
+        time.innerHTML = t;
+        if (t <= 0) {
+
+            clearInterval(inter);
+            t = 5;
+            time.innerHTML = t;
+            // inter = setInterval("fun()", 1000);
+        }
+    }
+
+    var inter = null;
+
+
+</script>
+
+</html>

@@ -1,0 +1,34 @@
+security:
+  oauth2:
+    resource:
+      token-info-uri: http://localhost:8090/oauth/check_token
+    client:
+      user-authorization-uri: http://localhost:8090/oauth/authorize
+      access-token-uri: http://localhost:8090/oauth/token
+      client-id: client
+      client-secret: secret
+
+
+server:
+  port: 8092
+  servlet:
+#    避免路径冲突
+    context-path: /competitor
+spring:
+  application:
+    name: client-competitor
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.229.150:8848
+  thymeleaf:
+#    prefix: /src/main/resources/templates/
+    cache: false
+  resources:
+    static-locations: classpath:/static,classpath:/templates/
+feign:
+  okhttp:
+    enabled: true
+  httpclient:
+    enabled: false
+
