@@ -1,0 +1,36 @@
+security:
+  oauth2:
+    resource:
+      token-info-uri: http://localhost:8090/oauth/check_token
+    client:
+      user-authorization-uri: http://localhost:8090/oauth/authorize
+      access-token-uri: http://localhost:8090/oauth/token
+      client-id: client
+      client-secret: secret
+
+server:
+  port: 8091
+  servlet:
+    session:
+      cookie:
+        name: OATUH2-CLIENT-SESSIONID01
+
+spring:
+  application:
+    name: resource-server
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.229.150:8848
+
+
+dubbo:
+  scan:
+    base-packages: com.eng.client.controller
+  protocol:
+    name: dubbo
+    port: -1
+    serialization: kryo
+  registry:
+    address: nacos://192.168.229.150:8848
+    port: 80
